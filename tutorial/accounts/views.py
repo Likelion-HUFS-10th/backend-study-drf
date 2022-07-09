@@ -11,21 +11,13 @@ from django.contrib.auth.hashers import make_password, check_password
 @api_view(['POST'])
 def login(request):
     serializer = LoginSerializer(data=request.data)
-    print("STEP1")
-    password = serializer.initial_data['password']
-    print(password)
-    print(CustomUser.objects.get(pk=6).password)
-    print(make_password(password) == CustomUser.objects.get(pk=6).password)
-    print(serializer.is_valid(raise_exception=True))
     if serializer.is_valid():
-        print("STEP2")
         user = auth.authenticate(
             request=request,
             username=serializer.data['username'],
             password=serializer.data['password']
         )
         if user is not None:
-            print("STEP3")
             auth.login(request, user)
             return Response(status=status.HTTP_200_OK)
         return Response(status=status.HTTP_404_NOT_FOUND)
