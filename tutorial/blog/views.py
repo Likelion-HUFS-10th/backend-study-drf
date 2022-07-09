@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from .models import Blog
-from .serializers import BlogSerializer
+from .serializers import BlogSerializer, BlogCreateSerializer
 from rest_framework.decorators import api_view, authentication_classes,permission_classes
 from rest_framework.response import Response
 from rest_framework import status
@@ -25,10 +25,11 @@ def get_all_blogs(request):
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def post_one_blog(request):
-    serializer = BlogSerializer(data=request.data)
+    serializer = BlogCreateSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save()
+        serializer.save(author=request.user)
         return Response(serializer.data, status = status.HTTP_201_CREATED)
+    return Response(status=status.HTTP_400_BAD_REQUEST)
 
 '''
 한 블로그 조회
@@ -53,9 +54,11 @@ def put_one_blog(request, pk):
     try: 
         blog = Blog.objects.get(pk=pk)
         if blog.author == request.user:
-            serializer = BlogSerializer(blog, data=request.data)
-            serializer.save()
-            return Response(status=status.HTTP_200_OK)
+            serializer = BlogCreateSerializer(blog, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_401_UNAUTHORIZED)
     except Blog.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
@@ -64,12 +67,14 @@ def put_one_blog(request, pk):
 한 블로그 삭제
 '''
 @api_view(['DELETE'])
-# @authentication_classes([SessionAuthentication, BasicAuthentication])
-# @permission_classes([IsAuthenticated])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def delete_one_blog(request, pk):
     try:
         blog = Blog.objects.get(pk=pk)
-        blog.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if blog.author == request.user:
+            blog.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
     except Blog.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
