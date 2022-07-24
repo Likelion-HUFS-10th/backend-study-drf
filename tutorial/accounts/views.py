@@ -21,7 +21,7 @@ def login(request):
             auth.login(request, user)
             return Response(status=status.HTTP_200_OK)
         return Response(status=status.HTTP_404_NOT_FOUND)
-    return Response(status=status.HTTP_401_UNAUTHORIZED)
+    return Response(status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 def signup(request):
